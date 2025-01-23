@@ -120,8 +120,11 @@ async function authentication(req: http.IncomingMessage, res: http.ServerRespons
       }
     } else {
       const pathName = parsedUrl?.pathname;
+      logger.info(pathName);
       if (authHeader && pathName && Constants.EXTENSION_SERVICE_END_POINTS.includes(pathName)) {
         const base64Credentials = authHeader.split(' ')[1];
+        logger.info(base64Credentials);
+        logger.info(process.env.PAYMENT_GATEWAY_EXTENSION_HEADER_VALUE);
         base64Credentials === process.env.PAYMENT_GATEWAY_EXTENSION_HEADER_VALUE
           ? handleRequest(req, res)
           : route.sendResponse(res, Constants.HTTP_UNAUTHORIZED_STATUS_CODE, 'application/json', JSON.stringify({ message: CustomMessages.ERROR_MSG_INVALID_AUTHENTICATION_CREDENTIALS }));
