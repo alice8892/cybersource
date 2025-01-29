@@ -67,7 +67,9 @@ async function authentication(req: http.IncomingMessage, res: http.ServerRespons
     parsedUrl = url.parse(requestUrl, true);
   }
   let whitelistUrlArray: string[] = [];
-  if ('/netTokenNotification' === parsedUrl?.pathname) {
+  logger.info(`Path received: ${parsedUrl?.pathname}`);
+
+  if ('/netTokenNotification' === parsedUrl?.pathname || parsedUrl?.pathname?.includes("/netTokenNotification")) {
     if ('GET' === req.method) {
       res.statusCode = Constants.HTTP_OK_STATUS_CODE;
       res.end();
