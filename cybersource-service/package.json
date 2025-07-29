@@ -77,7 +77,7 @@
     "chunk": "^0.0.3",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
-    "cybersource-rest-client": "0.0.62",
+    "cybersource-rest-client": "0.0.69",
     "dir-archiver": "^2.1.0",
     "dompurify": "^3.0.10",
     "dotenv": "^16.4.0",
