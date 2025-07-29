@@ -32,7 +32,7 @@ dotenv.config();
 if ('azure' === process.env.PAYMENT_GATEWAY_SERVERLESS_DEPLOYMENT) {
   port = Number(process.env.FUNCTIONS_HTTPWORKER_PORT);
 } else {
-  port = Number(process.env.CONFIG_PORT);
+  port = Number(process.env.CONFIG_PORT || 8080); // use 8080 if not set
 }
 
 const middlewareFunctions = [authentication];
