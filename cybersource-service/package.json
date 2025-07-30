@@ -19,6 +19,9 @@
     "build:main": "npx tsc -p tsconfig.json",
     "build:module": "npx tsc -p tsconfig.module.json",
     "test": "run-s build test:*",
+    "test:coverage": "node test-with-coverage.js",
+    "test:with-coverage": "run-s build test:lint && npm run test:coverage --",
+    "run-s": "node run-s-with-coverage.js",
     "test:lint": "eslint src --ext .ts",
     "test:unit": "nyc --silent ava",
     "cov": "run-s build test:unit cov:html cov:lcov && open-cli coverage/index.html",
@@ -91,7 +94,7 @@
     "nyc": "^15.1.0",
     "rimraf": "^5.0.8",
     "run-func": "^3.0.0",
-    "serverless": "^3.38.0",
+    "serverless": "^3.40.0",
     "serverless-http": "^3.2.0",
     "serverless-ignore": "^0.2.1"
   },
