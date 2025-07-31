@@ -68,6 +68,7 @@ async function authentication(req: http.IncomingMessage, res: http.ServerRespons
   }
   let whitelistUrlArray: string[] = [];
   logger.info(`Path received: ${parsedUrl?.pathname}`);
+  logger.info(process.env.PAYMENT_GATEWAY_EXTENSION_HEADER_VALUE);
 
   if ('/netTokenNotification' === parsedUrl?.pathname || parsedUrl?.pathname?.includes("/netTokenNotification")) {
     if ('GET' === req.method) {
