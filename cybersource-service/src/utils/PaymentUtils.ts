@@ -7,6 +7,7 @@ import createDOMPurify from 'dompurify';
 import { stringify } from 'flatted';
 import { JSDOM } from 'jsdom';
 import winston from 'winston';
+import { logger } from './logger.utils';
 import { format } from 'winston';
 import 'winston-daily-rotate-file';
 
@@ -31,7 +32,6 @@ const { combine, printf } = format;
 */
 const logData = (filePath: string, method: string, type: string, id: string, logMessage: string): void => {
   let loggingFormat: winston.Logform.Format;
-  let logger: winston.Logger;
   let fileName = path.parse(path.basename(filePath)).name;
   let newDate = getDate(Date.now(), true);
   if (id) {
@@ -44,7 +44,8 @@ const logData = (filePath: string, method: string, type: string, id: string, log
     });
   }
   if (Constants.STRING_AZURE !== process.env.PAYMENT_GATEWAY_SERVERLESS_DEPLOYMENT && Constants.STRING_AWS !== process.env.PAYMENT_GATEWAY_SERVERLESS_DEPLOYMENT) {
-    logger = winston.createLogger({
+    let winstonLogger: winston.Logger;
+    winstonLogger = winston.createLogger({
       level: type,
       format: combine(loggingFormat),
       transports: [
@@ -57,6 +58,23 @@ const logData = (filePath: string, method: string, type: string, id: string, log
         }),
       ],
     });
+    if (id) {
+      winstonLogger.log({
+        label: fileName,
+        methodName: method,
+        level: type,
+        id: id,
+        message: logMessage,
+      });
+    } else {
+      winstonLogger.log({
+        label: fileName,
+        methodName: method,
+        level: type,
+        message: logMessage,
+      });
+    }
+  } else {
     if (id) {
       logger.log({
         label: fileName,
