@@ -11,6 +11,8 @@ import paymentService from './utils/PaymentService';
 import paymentUtils from './utils/PaymentUtils';
 import commercetoolsApi from './utils/api/CommercetoolsApi';
 import payerAuthHelper from './utils/helpers/PayerAuthHelper';
+import { logger } from './utils/logger.utils';
+
 /**
  * Handles the creation of payment.
  *
@@ -19,8 +21,10 @@ import payerAuthHelper from './utils/helpers/PayerAuthHelper';
  */
 const paymentCreateApi = async (paymentObj: PaymentType): Promise<ActionResponseType> => {
   let response: ActionResponseType = paymentUtils.getEmptyResponse();
+  logger.info('Payment create request received with paymentObj: ' + paymentObj);
   try {
     if (paymentObj?.paymentMethodInfo?.method) {
+      logger.info('Payment create request received with paymentMethod: ' + paymentObj.paymentMethodInfo.method);
       const paymentMethod = paymentObj.paymentMethodInfo.method;
       if (paymentObj?.custom?.fields?.isv_transientToken) {
         response = paymentUtils.getEmptyResponse();
@@ -29,6 +33,7 @@ const paymentCreateApi = async (paymentObj: PaymentType): Promise<ActionResponse
           const actions = paymentUtils.setCustomFieldMapper(paymentObj.custom.fields);
           response.actions = actions;
         } else {
+          logger.info('Flex keys received with paymentObj: ' + paymentObj);
           const microFormKeys = await flexKeys.getFlexKeys(paymentObj);
           if (microFormKeys?.isv_tokenCaptureContextSignature) {
             response = paymentUtils.invalidOperationResponse();

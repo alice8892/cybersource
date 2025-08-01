@@ -212,6 +212,7 @@ const handleRequest = async (req: any, res: any): Promise<void> => {
           break;
         }
         case '/api/extension/payment/create': {
+          logger.info('Payment create request received');
           await handlePaymentCreate(req, res);
           break;
         }
@@ -380,6 +381,8 @@ const handlePaymentCreate = async (req: any, res: any): Promise<void> => {
   try {
     const body = await paymentUtils.collectRequestData(req);
     const requestObj = await paymentUtils.getRequestObj(body);
+    logger.info('Payment create request received with body: ' + body);
+    logger.info('Payment create request received with requestObj: ' + requestObj);
     if (null !== requestObj && typeof requestObj === Constants.STR_OBJECT) {
       const paymentObj = requestObj;
       response = await apiHandler.paymentCreateApi(paymentObj);

@@ -9,6 +9,8 @@ import { FunctionConstant } from '../../constants/functionConstant';
 import prepareFields from '../../requestBuilder/PrepareFields';
 import { PaymentType, ResponseType } from '../../types/Types';
 import paymentUtils from '../../utils/PaymentUtils';
+import { logger } from './utils/logger.utils';
+
 
 /**
  * Generates Flex keys for the flex microform.
@@ -31,10 +33,13 @@ const getFlexKeys = async (paymentObj: PaymentType): Promise<any> => {
     if (paymentObj) {
       const apiClient = new restApi.ApiClient();
       const configObject = await prepareFields.getConfigObject(FunctionConstant.FUNC_GET_FLEX_KEYS, null, paymentObj, null);
+      logger.info('Config object received with configObject: ' + configObject);
       targetOriginArray = await prepareFields.getTargetOrigins();
+      logger.info('Target origin array received with targetOriginArray: ' + targetOriginArray);
       for (const element of targetOriginArray) {
         targetOrigins.push(element);
       }
+      logger.info('Target origins received with targetOrigins: ' + targetOrigins);
       let allowedCardNetworks = await prepareFields.getAllowedCardNetworks('FUNC_KEYS');
       const requestObj: GenerateCaptureContextRequest = {
         encryptionType: encryptionType,
@@ -42,6 +47,7 @@ const getFlexKeys = async (paymentObj: PaymentType): Promise<any> => {
         clientVersion: clientVersion,
         allowedCardNetworks: allowedCardNetworks
       }
+      logger.info('Request object received with requestObj: ' + requestObj);
       if (paymentUtils.toBoolean(process.env.PAYMENT_GATEWAY_ENABLE_DEBUG))
         paymentUtils.logData(__filename, FunctionConstant.FUNC_GET_FLEX_KEYS, Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Flex Keys Request = ' + JSON.stringify(requestObj));
       const microFormIntegrationApiInstance = configObject && new restApi.MicroformIntegrationApi(configObject, apiClient);
