@@ -35,6 +35,7 @@ const paymentCreateApi = async (paymentObj: PaymentType): Promise<ActionResponse
         } else {
           logger.info('Flex keys received with paymentObj: ' + paymentObj);
           const microFormKeys = await flexKeys.getFlexKeys(paymentObj);
+          logger.info('Micro form keys received with microFormKeys: ' + microFormKeys);
           if (microFormKeys?.isv_tokenCaptureContextSignature) {
             response = paymentUtils.invalidOperationResponse();
             const verifiedCaptureContext = await keyVerification.getPublicKeys(microFormKeys.isv_tokenCaptureContextSignature, paymentObj);
