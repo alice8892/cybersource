@@ -9,7 +9,7 @@ import { FunctionConstant } from '../../constants/functionConstant';
 import prepareFields from '../../requestBuilder/PrepareFields';
 import { PaymentType, ResponseType } from '../../types/Types';
 import paymentUtils from '../../utils/PaymentUtils';
-import { logger } from './utils/logger.utils';
+import { logger } from '../../utils/logger.utils';
 
 
 /**
