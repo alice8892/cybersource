@@ -1,7 +1,7 @@
 deployAs:
   - name: cybersource-service
     applicationType: service
-    endpoint: /cybersource-service
+    endpoint: /
     scripts:
       postDeploy: npm install --loglevel verbose  && npm run build --loglevel verbose
     configuration:
