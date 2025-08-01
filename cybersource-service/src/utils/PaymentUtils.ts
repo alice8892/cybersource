@@ -6,9 +6,9 @@ import { PtsV2PaymentsCapturesPost201Response, PtsV2PaymentsPost201Response, Pts
 import createDOMPurify from 'dompurify';
 import { stringify } from 'flatted';
 import { JSDOM } from 'jsdom';
-import winston from 'winston';
+// import winston from 'winston';
 import { logger } from './logger.utils';
-import { format } from 'winston';
+// import { format } from 'winston';
 import 'winston-daily-rotate-file';
 
 import { Constants } from '../constants/constants';
@@ -20,7 +20,7 @@ import { ActionType, AddressType, AmountPlannedType, CertificateResponseType, Cu
 import paymentValidator from './PaymentValidator';
 import commercetoolsApi from './api/CommercetoolsApi';
 
-const { combine, printf } = format;
+
 /**
 * Handles logging info and errors.
 * 
@@ -31,50 +31,33 @@ const { combine, printf } = format;
 * @param {string} logMessage - Log message.
 */
 const logData = (filePath: string, method: string, type: string, id: string, logMessage: string): void => {
-  let loggingFormat: winston.Logform.Format;
+  // let loggingFormat: winston.Logform.Format;
   let fileName = path.parse(path.basename(filePath)).name;
-  let newDate = getDate(Date.now(), true);
-  if (id) {
-    loggingFormat = printf(({ label, methodName, level, message }) => {
-      return `[${newDate}] [${label}] [${methodName}] [${level.toUpperCase()}] [${id}] : ${message}`;
-    });
-  } else {
-    loggingFormat = printf(({ label, methodName, level, message }) => {
-      return `[${newDate}] [${label}] [${methodName}] [${level.toUpperCase()}]  : ${message}`;
-    });
-  }
+  // let newDate = getDate(Date.now(), true);
+  // if (id) {
+  //   loggingFormat = printf(({ label, methodName, level, message }) => {
+  //     return `[${newDate}] [${label}] [${methodName}] [${level.toUpperCase()}] [${id}] : ${message}`;
+  //   });
+  // } else {
+  //   loggingFormat = printf(({ label, methodName, level, message }) => {
+  //     return `[${newDate}] [${label}] [${methodName}] [${level.toUpperCase()}]  : ${message}`;
+  //   });
+  // }
   if (Constants.STRING_AZURE !== process.env.PAYMENT_GATEWAY_SERVERLESS_DEPLOYMENT && Constants.STRING_AWS !== process.env.PAYMENT_GATEWAY_SERVERLESS_DEPLOYMENT) {
-    let winstonLogger: winston.Logger;
-    winstonLogger = winston.createLogger({
-      level: type,
-      format: combine(loggingFormat),
-      transports: [
-        new winston.transports.DailyRotateFile({
-          filename: 'src/loggers/application-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          zippedArchive: true,
-          maxSize: '20m',
-          maxFiles: '14d',
-        }),
-      ],
-    });
-    if (id) {
-      winstonLogger.log({
-        label: fileName,
-        methodName: method,
-        level: type,
-        id: id,
-        message: logMessage,
-      });
-    } else {
-      winstonLogger.log({
-        label: fileName,
-        methodName: method,
-        level: type,
-        message: logMessage,
-      });
-    }
-  } else {
+    // let winstonLogger: winston.Logger;
+    // winstonLogger = winston.createLogger({
+    //   level: type,
+    //   format: combine(loggingFormat),
+    //   transports: [
+    //     new winston.transports.DailyRotateFile({
+    //       filename: 'src/loggers/application-%DATE%.log',
+    //       datePattern: 'YYYY-MM-DD',
+    //       zippedArchive: true,
+    //       maxSize: '20m',
+    //       maxFiles: '14d',
+    //     }),
+    //   ],
+    // });
     if (id) {
       logger.log({
         label: fileName,
@@ -91,7 +74,7 @@ const logData = (filePath: string, method: string, type: string, id: string, log
         message: logMessage,
       });
     }
-  }
+  } 
 };
 
 const getDate = (dateInput: Date | string | number | null = null, isReturnTypeString: boolean, modifyMonth: number | null = null, setMonth: number | null = null): any => {
