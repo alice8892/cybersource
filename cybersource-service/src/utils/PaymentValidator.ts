@@ -90,7 +90,6 @@ const isValidRateLimiterInput = (): boolean => {
 const shouldProcessTokens = (isError: boolean, paymentResponse: any, updatePaymentObj: PaymentType): boolean => {
     const paymentMethod = updatePaymentObj?.paymentMethodInfo.method;
     if (!isError &&
-        updatePaymentObj?.customer?.id &&
         Constants.HTTP_SUCCESS_STATUS_CODE === paymentResponse.httpCode &&
         Constants.API_STATUS_AUTHORIZED === paymentResponse.status &&
         (Constants.CREDIT_CARD === paymentMethod || Constants.CC_PAYER_AUTHENTICATION === paymentMethod) &&
