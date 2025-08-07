@@ -33,6 +33,7 @@ import paymentHandler from './PaymentHandler';
 import paymentUtils from './PaymentUtils';
 import paymentValidator from './PaymentValidator';
 import tokenHelper from './helpers/TokenHelper';
+import { logger } from './logger.utils';
 /**
  * Process the response for Order Management service based on payment response and transaction details.
  * 
@@ -676,6 +677,7 @@ const setCustomerTokenData = async (cardTokens: CustomTokenType, paymentResponse
   const processTokenData = paymentValidator.shouldProcessTokens(isError, paymentResponse, updatePaymentObj);
   if (processTokenData && paymentResponse?.data?.tokenInformation?.paymentInstrument?.id) {
     const tokenInfo = paymentResponse.data.tokenInformation;
+    logger.info('TokenInfo : ' + JSON.stringify(tokenInfo));
     const isv_savedToken = paymentResponse.data.tokenInformation.paymentInstrument.id;
     authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_savedToken }));
     if (cardTokens && !cardTokens?.customerTokenId && tokenInfo?.customer && tokenInfo.customer?.id) {
