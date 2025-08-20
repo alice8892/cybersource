@@ -76,7 +76,31 @@ const paymentCreateApi = async (paymentObj: PaymentType): Promise<ActionResponse
  */
 const paymentUpdateApi = async (paymentObj: PaymentType): Promise<ActionResponseType> => {
   let updateResponse: ActionResponseType = paymentUtils.getEmptyResponse();
-  if (paymentObj?.id && paymentObj.paymentMethodInfo?.method && paymentObj?.transactions) {
+  if (
+    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === "" || 
+    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === null ||
+    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === undefined
+  ) {
+    logger.info('Flex keys received with paymentObj: ' + paymentObj);
+    const microFormKeys = await flexKeys.getFlexKeys(paymentObj);
+    // convert microFormKeys to stringified object
+    logger.info('Micro form keys received with microFormKeys: ' + JSON.stringify(microFormKeys));
+    if (microFormKeys?.isv_tokenCaptureContextSignature) {
+      // log microFormKeys.isv_tokenCaptureContextSignature
+      logger.info('Micro form keys received with microFormKeys: ' + microFormKeys.isv_tokenCaptureContextSignature);
+      updateResponse = paymentUtils.invalidOperationResponse();
+      const verifiedCaptureContext = await keyVerification.getPublicKeys(microFormKeys.isv_tokenCaptureContextSignature, paymentObj);
+      if (verifiedCaptureContext) {
+        const actions = paymentUtils.setCustomFieldMapper(microFormKeys);
+        updateResponse.actions = actions;
+      } else {
+        paymentUtils.logData(__filename, 'FuncPaymentCreateApi', Constants.LOG_INFO, '', CustomMessages.ERROR_MSG_INVALID_CAPTURE_CONTEXT);
+      }
+    } else {
+      updateResponse = paymentUtils.invalidOperationResponse();
+      paymentUtils.logData(__filename, 'FuncPaymentCreateApi', Constants.LOG_INFO, '', CustomMessages.ERROR_MSG_INVALID_CAPTURE_CONTEXT);
+    }
+  } else if (paymentObj?.id && paymentObj.paymentMethodInfo?.method && paymentObj?.transactions) {
     const paymentMethod = paymentObj.paymentMethodInfo.method;
     const transactionLength = paymentObj.transactions?.length;
     if (paymentObj?.custom?.fields) {
