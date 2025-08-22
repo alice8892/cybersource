@@ -1010,7 +1010,6 @@ const processTransaction = async (paymentObj: PaymentType) => {
   const paymentCustomFields = paymentObj.custom?.fields;
   const updateTransactions = paymentObj?.transactions[transactionLength - 1];
   if (
-    1 === transactionLength &&
     updateTransactions &&
     (Constants.CT_TRANSACTION_TYPE_AUTHORIZATION === updateTransactions.type || (Constants.CT_TRANSACTION_TYPE_CHARGE === updateTransactions.type && (paymentCustomFields?.isv_saleEnabled || Constants.ECHECK === paymentMethod)))
   ) {
