@@ -8,7 +8,7 @@ import paymentUtils from "./PaymentUtils";
 import paymentValidator from "./PaymentValidator";
 /**
  * Creates a refund action object to add a refund transaction.
- * 
+ *
  * @param {AmountPlannedType} amount - Amount to refund.
  * @param {any} orderResponse - Order response object.
  * @param {string} state - State of the refund transaction.
@@ -34,7 +34,7 @@ const addRefundAction = (amount: AmountPlannedType, orderResponse: any, state: s
 };
 /**
  * Creates a response object based on the provided actions and optional parameters.
- * 
+ *
  * @param {ActionType} setTransaction - Action to set transaction details.
  * @param {ActionType} setCustomField - Action to set custom field.
  * @param {ActionType | null} paymentFailure - Action for payment failure (optional).
@@ -56,7 +56,7 @@ const createResponse = (setTransaction: Partial<ActionType>, setCustomField: Par
 };
 /**
  * Generates actions based on card details.
- * 
+ *
  * @param {CardAddressGroupType} cardDetails - The card details.
  * @returns {ActionType[]} - Array of actions.
  */
@@ -65,9 +65,9 @@ const cardDetailsActions = (cardDetails: Partial<CardAddressGroupType>): Partial
     try {
         const { cardFieldGroup } = cardDetails || {};
         if (cardFieldGroup) {
-            const { prefix, suffix, expirationMonth, expirationYear, type } = cardFieldGroup;
+            const { suffix, expirationMonth, expirationYear, type } = cardFieldGroup;
             actions = [
-                ...(prefix && suffix ? paymentUtils.setCustomFieldMapper({ isv_maskedPan: prefix.concat(Constants.CLICK_TO_PAY_CARD_MASK, suffix) }) : []),
+                ...(suffix ? paymentUtils.setCustomFieldMapper({ isv_maskedPan: suffix }) : []),
                 ...(expirationMonth ? paymentUtils.setCustomFieldMapper({ isv_cardExpiryMonth: expirationMonth }) : []),
                 ...(expirationYear ? paymentUtils.setCustomFieldMapper({ isv_cardExpiryYear: expirationYear }) : []),
                 ...(type ? paymentUtils.setCustomFieldMapper({ isv_cardType: type }) : [])
@@ -146,7 +146,7 @@ const getUpdateTokenActions = (isvTokens: string[], existingFailedTokensMap: str
 }
 /**
  * Handles authorization application for the given payment update.
- * 
+ *
  * @param {PaymentType} updatePaymentObj - Updated payment object.
  * @param {ApplicationsType} application - Application details.
  * @param {ActionResponseType} updateActions - Updated actions.
@@ -168,7 +168,7 @@ const handleAuthApplication = async (updatePaymentObj: PaymentType, application:
 };
 /**
  * Generates actions based on payer enrollment response.
- * 
+ *
  * @param {any} response - The payer enrollment response.
  * @param {PaymentType} updatePaymentObj - The payment object to be updated.
  * @returns {ActionResponseType} - Object containing actions and errors.
@@ -243,7 +243,7 @@ const createEnrollResponseActions = (response: any, updatePaymentObj: PaymentTyp
 
 /**
 * Generates actions based on payer authentication response.
-* 
+*
 * @param {ConsumerAuthenticationInformationType} response - The payer authentication response.
 * @returns {ActionType[]} - Array of actions.
 */

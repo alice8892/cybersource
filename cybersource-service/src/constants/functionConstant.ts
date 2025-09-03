@@ -11,6 +11,7 @@ export abstract class FunctionConstant {
   static readonly FUNC_GET_CARD_BY_INSTRUMENT_RESPONSE = 'FuncGetCardByInstrumentResponse';
   static readonly FUNC_GET_PUBLIC_KEYS = 'FuncGetPublicKeys';
   static readonly FUNC_GET_TRANSACTION_DATA = 'FuncGetTransactionData';
+  static readonly FUNC_GET_PAYMENT_INSTRUMENT_DETAILS = 'FuncGetPaymentInstrumentDetails';
   static readonly FUNC_GET_TRANSIENT_TOKEN_DATA_RESPONSE = 'FuncGetTransientTokenDataResponse';
   static readonly FUNC_GET_WEBHOOK_SUBSCRIPTION_RESPONSE = 'FuncWebhookSubscriptionResponse';
   static readonly FUNC_GET_KEY_GENERATION_RESPONSE = 'FuncGetKeyGenerationResponse';

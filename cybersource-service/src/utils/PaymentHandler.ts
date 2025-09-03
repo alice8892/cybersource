@@ -11,6 +11,7 @@ import addTokenService from '../service/payment/AddTokenService';
 import createSearchRequest from '../service/payment/CreateTransactionSearchRequest';
 import conversion from '../service/payment/DecisionSyncService';
 import deleteToken from '../service/payment/DeleteTokenService';
+import getPaymentInstrumentDetails from '../service/payment/GetPaymentInstrumentDetails';
 import updateToken from '../service/payment/UpdateTokenService';
 import { ActionResponseType, AddressType, CustomerTokensType, CustomerType, CustomTokenType, InstrumentIdResponse, PaymentCustomFieldsType, PaymentTransactionType, PaymentType, ReportResponseType } from '../types/Types';
 import multiMid from '../utils/config/MultiMid';
@@ -26,7 +27,7 @@ import paymentValidator from './PaymentValidator';
 import tokenHelper from './helpers/TokenHelper';
 /**
  * Handles the authorization process for a payment.
- * 
+ *
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {PaymentTransactionType} updateTransactions - The updated transaction object.
  * @returns {Promise<ActionResponseType>} - The authorization response.
@@ -64,6 +65,13 @@ const handleAuthorization = async (updatePaymentObj: PaymentType, updateTransact
         const paymentResponse = serviceResponse.paymentResponse;
         if (Constants.CREDIT_CARD === paymentMethod) {
           authResponse = await paymentService.setCustomerTokenData(cardTokens, paymentResponse, authResponse, isError, updatePaymentObj, results[0]);
+
+          // Extract card details from saved token payment instrument when authorization is successful
+          if (!isError && paymentResponse && Constants.HTTP_SUCCESS_STATUS_CODE === paymentResponse.httpCode &&
+              (Constants.API_STATUS_AUTHORIZED === paymentResponse.status || Constants.API_STATUS_AUTHORIZED_PENDING_REVIEW === paymentResponse.status) &&
+              updatePaymentObj?.custom?.fields?.isv_savedToken) {
+            authResponse = await handleSavedTokenCardDetails(updatePaymentObj, cardTokens, authResponse);
+          }
         }
         const customFields = updatePaymentObj?.custom?.fields;
         authResponse = await handleSetTokenToNull(customFields, authResponse, paymentMethod);
@@ -89,7 +97,7 @@ const handleAuthorization = async (updatePaymentObj: PaymentType, updateTransact
 };
 /**
  * Handles setting certain custom fields to null.
- * 
+ *
  * @param {PaymentCustomFieldsType | undefined} customFields - The custom fields of the payment.
  * @param {ActionResponseType} authResponse - The authorization response.
  * @param {string} paymentMethod - The payment method.
@@ -112,7 +120,7 @@ const handleSetTokenToNull = async (customFields: Partial<PaymentCustomFieldsTyp
 };
 /**
  * Handles authorization for different payment methods.
- * 
+ *
  * @param {string} paymentMethod - The payment method.
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {CustomerType | null} customerInfo - Information about the customer.
@@ -155,7 +163,7 @@ const handlePaymentAuth = async (paymentMethod: string, updatePaymentObj: Paymen
 };
 /**
  * Handles payer authentication reversal.
- * 
+ *
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {any} paymentResponse - The payment response.
  * @param {ActionResponseType} updateActions - The updated actions response.
@@ -176,7 +184,7 @@ const handlePayerAuthReversal = async (updatePaymentObj: PaymentType, paymentRes
 };
 /**
  * Handles Apple Pay session.
- * 
+ *
  * @param {PaymentCustomFieldsType} fields - The payment custom fields.
  * @returns {Promise<ActionResponseType>} - The service response.
  */
@@ -227,7 +235,7 @@ const handleApplePaySession = async (fields: Partial<PaymentCustomFieldsType>): 
 };
 /**
  * Handles charge operation for order management.
- * 
+ *
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {string} orderNo - The order number.
  * @param {PaymentTransactionType} updateTransactions - The updated payment transactions.
@@ -262,7 +270,7 @@ const handleTransactionType = async (type: string | undefined, state: string | u
 }
 /**
  * Handles authorization reversal operation for order management.
- * 
+ *
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {any} cartObj - The cart object.
  * @returns {Promise<any>} - The order response.
@@ -283,7 +291,7 @@ const handleOrderManagementAuthReversal = async (updatePaymentObj: PaymentType, 
 };
 /**
  * Handles order management operations.
- * 
+ *
  * @param {string} paymentId - The ID of the payment.
  * @param {PaymentType} updatePaymentObj - The updated payment object.
  * @param {PaymentTransactionType} updateTransactions - The updated transaction object.
@@ -328,7 +336,7 @@ const handleOrderManagement = async (paymentId: string, updatePaymentObj: Paymen
 };
 /**
  * Handles the update of card details.
- * 
+ *
  * @param {CustomerTokensType} tokens - The tokens associated with the customer.
  * @param {string} customerId - The ID of the customer.
  * @param {CustomerType} customerObj - The customer object.
@@ -390,7 +398,7 @@ const handleUpdateCard = async (tokens: Partial<CustomerTokensType>, customerId:
 };
 /**
  * Handles the deletion of a card.
- * 
+ *
  * @param {CustomerTokensType} updateCustomerObj - The tokens associated with the customer.
  * @param {string} customerId - The ID of the customer.
  * @returns {Promise<ActionResponseType>} - The action response.
@@ -427,7 +435,7 @@ const handleCardDeletion = async (updateCustomerObj: Partial<CustomerTokensType>
 }
 /**
  * Handles the addition of a card.
- * 
+ *
  * @param {string} customerId - The ID of the customer.
  * @param {readonly AddressType[]} addressObj - The array of addresses associated with the customer.
  * @param {CustomerType} customerObj - The customer object.
@@ -460,7 +468,7 @@ const handleCardAddition = async (customerId: string, addressObj: readonly Addre
 };
 /**
  * Handles the decision sync process.
- * 
+ *
  * @returns {Promise<ReportResponseType>} - The report response.
  */
 const handleReport = async (): Promise<ReportResponseType> => {
@@ -518,7 +526,7 @@ const handleReport = async (): Promise<ReportResponseType> => {
 };
 /**
  * Handles the synchronization process.
- * 
+ *
  * @returns {Promise<{ message: string, error: string }>} - The sync response.
  */
 const handleSync = async (): Promise<{ message: string, error: string }> => {
@@ -573,7 +581,7 @@ const handleSync = async (): Promise<{ message: string, error: string }> => {
 };
 /**
  * Handles the network token update process.
- * 
+ *
  * @param {string} customerTokenId - The customer token ID.
  * @param {InstrumentIdResponse} retrieveTokenDetailsResponse - The response containing token details.
  * @returns {Promise<any>} - The response of the token update process.
@@ -608,6 +616,37 @@ const handleNetworkToken = async (customerTokenId: string, retrieveTokenDetailsR
   }
   return response;
 };
+/**
+ * Extracts and sets card details from payment instrument when saved token is used.
+ *
+ * @param {PaymentType} updatePaymentObj - The updated payment object.
+ * @param {CustomTokenType} cardTokens - Card tokens associated with the customer.
+ * @param {ActionResponseType} authResponse - The authorization response.
+ * @returns {Promise<ActionResponseType>} - The updated authorization response with card details.
+ */
+const handleSavedTokenCardDetails = async (updatePaymentObj: PaymentType, cardTokens: CustomTokenType, authResponse: ActionResponseType): Promise<ActionResponseType> => {
+  let paymentId = updatePaymentObj?.id || '';
+  try {
+    if (updatePaymentObj?.custom?.fields?.isv_savedToken && cardTokens?.paymentInstrumentId) {
+      const instrumentDetails = await getPaymentInstrumentDetails.getPaymentInstrumentDetails(cardTokens.paymentInstrumentId, updatePaymentObj);
+
+      if (instrumentDetails && instrumentDetails.httpCode === Constants.HTTP_OK_STATUS_CODE && instrumentDetails.cardFieldGroup) {
+        const cardDetails = {
+          cardFieldGroup: instrumentDetails.cardFieldGroup
+        };
+
+        const actions = paymentActions.cardDetailsActions(cardDetails);
+        paymentValidator.validateActionsAndPush(actions, authResponse.actions);
+
+        paymentUtils.logData(__filename, FunctionConstant.FUNC_HANDLE_AUTHORIZATION, Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Card details extracted and set from saved token payment instrument');
+      }
+    }
+  } catch (exception) {
+    paymentUtils.logExceptionData(__filename, FunctionConstant.FUNC_HANDLE_AUTHORIZATION, 'Exception in handling saved token card details', exception, paymentId, 'PaymentId : ', '');
+  }
+
+  return authResponse;
+};
 
 export default {
   handleAuthorization,
@@ -625,4 +664,5 @@ export default {
   handleReport,
   handleSync,
   handleNetworkToken,
+  handleSavedTokenCardDetails,
 };
