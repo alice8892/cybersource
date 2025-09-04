@@ -74,7 +74,13 @@ export class ProcessingInformation {
         if (this.service === Constants.VALIDATION) {
             actionList.push(Constants.PAYMENT_GATEWAY_VALIDATE_CONSUMER_AUTHENTICATION);
         }
-        if ((!customFields?.isv_savedToken && customFields?.isv_tokenAlias && !this.isSaveToken) || FunctionConstant.FUNC_GET_ADD_TOKEN_RESPONSE === this.functionName) {
+
+        // Check if TOKEN_CREATE should be added
+        const shouldCreateToken = (!customFields?.isv_savedToken && customFields?.isv_tokenAlias && !this.isSaveToken) ||
+                                 FunctionConstant.FUNC_GET_ADD_TOKEN_RESPONSE === this.functionName ||
+                                 (this.resourceObj?.customer?.id && !customFields?.isv_savedToken && !this.isSaveToken);
+
+        if (shouldCreateToken) {
             actionList.push(Constants.PAYMENT_GATEWAY_TOKEN_CREATE);
             this.processingInformation.actionList = actionList;
             this.addAuthorizationOptions();
@@ -90,9 +96,18 @@ export class ProcessingInformation {
             initiator: initiator
         };
         this.processingInformation.authorizationOptions = authorizationOptions;
-        this.processingInformation.actionTokenTypes = this.cardTokens && this.cardTokens.customerTokenId ?
-            Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_EXISTS :
-            Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES;
+
+        // Determine actionTokenTypes based on customer and token scenarios
+        if (this.cardTokens && this.cardTokens.customerTokenId) {
+            // Customer already exists in CyberSource
+            this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_EXISTS;
+        } else if (this.resourceObj?.customer?.id && !this.isSaveToken) {
+            // Customer exists in CommerceTools but needs to be created in CyberSource (customer creation scenario)
+            this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_ONLY;
+        } else {
+            // Default case - create customer, payment instrument, and instrument identifier
+            this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES;
+        }
     }
 
     private configureReconciliationId(orderNo: string) {

@@ -27,6 +27,7 @@ export abstract class Constants {
   static readonly PAYMENT_GATEWAY_PAYER_AUTH_CHALLENGE_CODE = '04';
   static readonly PAYMENT_GATEWAY_TOKEN_ACTION_TYPES = 'customer,paymentInstrument,instrumentIdentifier';
   static readonly PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_EXISTS = 'paymentInstrument,instrumentIdentifier';
+  static readonly PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_ONLY = 'customer';
   static readonly PAYMENT_GATEWAY_TOKEN_CREATE = 'TOKEN_CREATE';
   static readonly PAYMENT_GATEWAY_ACS_WINDOW_SIZE = '01';
   static readonly PAYMENT_GATEWAY_WEBHOOK_PORT = '443';
