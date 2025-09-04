@@ -37,6 +37,32 @@ export abstract class Constants {
   static readonly PAYMENT_GATEWAY_PRODUCT_ID = 'ctNetworkTokenSubscription';
   static readonly PAYMENT_GATEWAY_NETWORK_TOKEN_EVENT_TYPE = 'tms.networktoken.updated';
 
+  //Card type mappings - Convert numeric codes to brand names
+  static readonly CARD_TYPE_MAPPING: { [key: string]: string } = {
+    '001': 'Visa',
+    '002': 'Mastercard',
+    '003': 'American Express',
+    '004': 'Discover',
+    '005': 'Diners Club',
+    '006': 'Carte Blanche',
+    '007': 'JCB',
+    '014': 'Enroute',
+    '021': 'JAL',
+    '024': 'Maestro (UK Domestic)',
+    '031': 'Delta',
+    '033': 'Visa Electron',
+    '034': 'Dankort',
+    '036': 'Cartes Bancaires',
+    '037': 'Carta Si',
+    '039': 'Encoded Account Number',
+    '040': 'UATP',
+    '042': 'Maestro (International)',
+    '050': 'Hipercard',
+    '051': 'Aura',
+    '054': 'Elo',
+    '062': 'China UnionPay'
+  };
+
   //Payment status codes
   static readonly HTTP_OK_STATUS_CODE = 200;
   static readonly HTTP_SUCCESS_STATUS_CODE = 201;

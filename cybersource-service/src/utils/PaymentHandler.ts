@@ -72,6 +72,13 @@ const handleAuthorization = async (updatePaymentObj: PaymentType, updateTransact
               updatePaymentObj?.custom?.fields?.isv_savedToken) {
             authResponse = await handleSavedTokenCardDetails(updatePaymentObj, cardTokens, authResponse);
           }
+
+          // Extract card details from JWT token when authorization is successful and not using saved token
+          if (!isError && paymentResponse && Constants.HTTP_SUCCESS_STATUS_CODE === paymentResponse.httpCode &&
+              (Constants.API_STATUS_AUTHORIZED === paymentResponse.status || Constants.API_STATUS_AUTHORIZED_PENDING_REVIEW === paymentResponse.status) &&
+              updatePaymentObj?.custom?.fields?.isv_token && !updatePaymentObj?.custom?.fields?.isv_savedToken) {
+            authResponse = await handleJwtTokenCardDetails(updatePaymentObj, authResponse);
+          }
         }
         const customFields = updatePaymentObj?.custom?.fields;
         authResponse = await handleSetTokenToNull(customFields, authResponse, paymentMethod);
@@ -647,6 +654,90 @@ const handleSavedTokenCardDetails = async (updatePaymentObj: PaymentType, cardTo
 
   return authResponse;
 };
+/**
+ * Extracts and sets card details from JWT token when saved token is not used.
+ *
+ * @param {PaymentType} updatePaymentObj - The updated payment object.
+ * @param {ActionResponseType} authResponse - The authorization response.
+ * @returns {Promise<ActionResponseType>} - The updated authorization response with card details.
+ */
+const handleJwtTokenCardDetails = async (updatePaymentObj: PaymentType, authResponse: ActionResponseType): Promise<ActionResponseType> => {
+  let paymentId = updatePaymentObj?.id || '';
+  try {
+    if (updatePaymentObj?.custom?.fields?.isv_token && !updatePaymentObj?.custom?.fields?.isv_savedToken) {
+      const { jwtDecode } = require('jwt-decode');
+
+      paymentUtils.logData(__filename, 'handleJwtTokenCardDetails', Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Starting JWT token card details extraction for auth response');
+
+      const decodedToken: any = jwtDecode(updatePaymentObj.custom.fields.isv_token);
+      const cardData = decodedToken?.content?.paymentInformation?.card;
+
+      if (cardData) {
+        paymentUtils.logData(__filename, 'handleJwtTokenCardDetails', Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Card data found in JWT: ' + JSON.stringify(cardData));
+
+        // Extract card information
+        let prefix = '';
+        let suffix = '';
+        let type = '';
+        let expirationMonth = '';
+        let expirationYear = '';
+
+        // Extract card type from detectedCardTypes and convert to verbal name
+        if (cardData.number?.detectedCardTypes && cardData.number.detectedCardTypes.length > 0) {
+          const numericType = cardData.number.detectedCardTypes[0];
+          type = Constants.CARD_TYPE_MAPPING[numericType] || numericType; // Use mapped name or fallback to numeric code
+          paymentUtils.logData(__filename, 'handleJwtTokenCardDetails', Constants.LOG_INFO, 'PaymentId : ' + paymentId,
+            'Card type mapped from ' + numericType + ' to ' + type);
+        }
+
+        // Extract BIN (first 6 digits) for prefix
+        if (cardData.number?.bin) {
+          prefix = cardData.number.bin;
+        }
+
+        // Extract last 4 digits from maskedValue
+        if (cardData.number?.maskedValue) {
+          const maskedValue = cardData.number.maskedValue;
+          const last4 = maskedValue.replace(/X/g, '').slice(-4);
+          if (last4.length === 4) {
+            suffix = last4;
+          }
+        }
+
+        // Extract expiry information
+        if (cardData.expirationMonth?.value && cardData.expirationYear?.value) {
+          expirationMonth = String(cardData.expirationMonth.value).padStart(2, '0');
+          expirationYear = String(cardData.expirationYear.value);
+        }
+
+        // Create cardDetails object in the same format as handleSavedTokenCardDetails
+        const cardDetails = {
+          cardFieldGroup: {
+            prefix,
+            suffix,
+            expirationMonth,
+            expirationYear,
+            type
+          }
+        };
+
+        // Use the same cardDetailsActions function to create CommerceTools actions
+        const actions = paymentActions.cardDetailsActions(cardDetails);
+        paymentValidator.validateActionsAndPush(actions, authResponse.actions);
+
+        paymentUtils.logData(__filename, 'handleJwtTokenCardDetails', Constants.LOG_INFO, 'PaymentId : ' + paymentId,
+          'JWT card details extracted and set - Type: ' + type + ', BIN: ' + prefix + ', Last4: ' + suffix + ', Expiry: ' + expirationMonth + '/' + expirationYear);
+
+      } else {
+        paymentUtils.logData(__filename, 'handleJwtTokenCardDetails', Constants.LOG_WARN, 'PaymentId : ' + paymentId, 'No card data found in JWT token');
+      }
+    }
+  } catch (exception) {
+    paymentUtils.logExceptionData(__filename, 'handleJwtTokenCardDetails', 'Exception in handling JWT token card details', exception, paymentId, 'PaymentId : ', '');
+  }
+
+  return authResponse;
+};
 
 export default {
   handleAuthorization,
@@ -665,4 +756,5 @@ export default {
   handleSync,
   handleNetworkToken,
   handleSavedTokenCardDetails,
+  handleJwtTokenCardDetails,
 };
