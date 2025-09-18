@@ -79,16 +79,15 @@ export class ProcessingInformation {
         const shouldCreateToken = (!customFields?.isv_savedToken && customFields?.isv_tokenAlias && !this.isSaveToken) ||
                                  FunctionConstant.FUNC_GET_ADD_TOKEN_RESPONSE === this.functionName ||
                                  (this.resourceObj?.customer?.id && !customFields?.isv_savedToken && !this.isSaveToken);
-
         if (shouldCreateToken) {
             actionList.push(Constants.PAYMENT_GATEWAY_TOKEN_CREATE);
             this.processingInformation.actionList = actionList;
-            this.addAuthorizationOptions();
+            this.addAuthorizationOptions(customFields);
         }
         this.processingInformation.actionList = actionList;
     }
 
-    private addAuthorizationOptions() {
+    private addAuthorizationOptions(customFields: any) {
         const initiator: Ptsv2paymentsProcessingInformationAuthorizationOptionsInitiator = {
             credentialStoredOnFile: true
         };
@@ -98,10 +97,10 @@ export class ProcessingInformation {
         this.processingInformation.authorizationOptions = authorizationOptions;
 
         // Determine actionTokenTypes based on customer and token scenarios
-        if (this.cardTokens && this.cardTokens.customerTokenId) {
+        if (this.cardTokens && this.cardTokens.customerTokenId && customFields?.isv_tokenAlias) {
             // Customer already exists in CyberSource
             this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_EXISTS;
-        } else if (this.resourceObj?.customer?.id && !this.isSaveToken) {
+        } else if (this.resourceObj?.customer?.id && !customFields?.isv_tokenAlias && !this.isSaveToken) {
             // Customer exists in CommerceTools but needs to be created in CyberSource (customer creation scenario)
             this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_ONLY;
         } else {
