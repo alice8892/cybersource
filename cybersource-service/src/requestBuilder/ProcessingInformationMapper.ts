@@ -95,9 +95,8 @@ export class ProcessingInformation {
             initiator: initiator
         };
         this.processingInformation.authorizationOptions = authorizationOptions;
-
         // Determine actionTokenTypes based on customer and token scenarios
-        if (this.cardTokens && this.cardTokens.customerTokenId && customFields?.isv_tokenAlias) {
+        if (this.cardTokens && this.cardTokens.customerTokenId && (customFields?.isv_tokenAlias || FunctionConstant.FUNC_GET_ADD_TOKEN_RESPONSE === this.functionName)) {
             // Customer already exists in CyberSource
             this.processingInformation.actionTokenTypes = Constants.PAYMENT_GATEWAY_TOKEN_ACTION_TYPES_CUSTOMER_EXISTS;
         } else if (this.resourceObj?.customer?.id && !customFields?.isv_tokenAlias && !this.isSaveToken) {

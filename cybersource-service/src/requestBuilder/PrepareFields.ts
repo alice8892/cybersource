@@ -18,7 +18,7 @@ import { ProcessingInformation } from './ProcessingInformationMapper';
 
 /**
  * Generates the configuration object based on the provided parameters.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {MidCredentialsType | null} midCredentials - MID credentials.
  * @param {PaymentType | null} resourceObj - The payment object.
@@ -78,13 +78,13 @@ const getConfigObject = async (functionName: string, midCredentials: MidCredenti
 
 /**
  * Generates processing information object based on the provided function name and payment scenario.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {PaymentType | null} resourceObj - The payment object containing custom fields.
  * @param {string} orderNo - The order number associated with the payment.
  * @param {string} service - The service type for the payment.
  * @param {CustomTokenType | null} cardTokens - The card tokens associated with the payment.
- * @param {boolean | null} isSaveToken - Specifies whether to save the token or not. 
+ * @param {boolean | null} isSaveToken - Specifies whether to save the token or not.
  * @returns {Promise<restApi.Ptsv2paymentsProcessingInformation>} - The processing information object.
  */
 const getProcessingInformation = async (functionName: string, resourceObj: PaymentType | null, orderNo: string, service: string, cardTokens: CustomTokenType | null, isSaveToken: boolean | null) => {
@@ -94,7 +94,7 @@ const getProcessingInformation = async (functionName: string, resourceObj: Payme
 
 /**
  * Generates payment information object based on the provided function name and payment scenario.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {PaymentType | null} resourceObj - The payment object containing custom fields.
  * @param {CustomTokenType | null} cardTokens - The card tokens associated with the payment.
@@ -109,7 +109,7 @@ const getPaymentInformation = async (functionName: string, resourceObj: PaymentT
 
 /**
  * Generates client reference information based on the provided service and resource ID.
- * 
+ *
  * @param {string} service - The name of the service.
  * @param {string} resourceId - The ID of the resource.
  * @returns {Promise<any>} - The client reference information object.
@@ -145,7 +145,7 @@ const getClientReferenceInformation = async (service: string, resourceId: string
 
 /**
  * Generates order information based on the provided parameters.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {PaymentType | null} paymentObj - The payment object.
  * @param {PaymentTransactionType | null} updateTransactions - The updated transaction object.
@@ -163,7 +163,7 @@ const getOrderInformation = (functionName: string, paymentObj: PaymentType | nul
 
 /**
  * Generates order information amount details based on the provided parameters.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {number | null} captureAmount - The capture amount.
  * @param {PaymentType | null} paymentObj - The payment object.
@@ -203,7 +203,7 @@ const getOrderInformationAmountDetails = (functionName: string, captureAmount: n
     }
   } else if (FunctionConstant.FUNC_GET_ADD_TOKEN_RESPONSE === functionName) {
     orderInformationAmountDetails = {} as Ptsv2paymentsOrderInformationAmountDetails;
-    orderInformationAmountDetails.totalAmount = 0;
+    orderInformationAmountDetails.totalAmount = 0.01;
     orderInformationAmountDetails.currency = currencyCode;
   }
   return orderInformationAmountDetails;
@@ -211,7 +211,7 @@ const getOrderInformationAmountDetails = (functionName: string, captureAmount: n
 
 /**
  * Generates order information bill-to details based on the provided parameters.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @param {any} cartObj - The cart object.
  * @param {AddressType | null} address - The address object.
@@ -252,7 +252,7 @@ const getOrderInformationBillToDetails = (functionName: string, cartObj: any, ad
 
 /**
  * Generates order information ship-to details based on the provided cart object.
- * 
+ *
  * @param {any} cartObj - The cart object.
  * @returns {Promise<any>} - The order information ship-to details.
  */
@@ -275,7 +275,7 @@ const getOrderInformationShipToDetails = (cartObj: any, shippingMethod: string |
 
 /**
  * Generates device information for payment based on the provided parameters.
- * 
+ *
  * @param {PaymentType | null} paymentObj - The payment object.
  * @param {CustomerType | null} customerObj - The customer object.
  * @param {string} service - The name of the service.
@@ -302,7 +302,7 @@ const getDeviceInformation = async (paymentObj: PaymentType | null, customerObj:
 
 /**
  * Generates consumer authentication information for payment based on the provided parameters.
- * 
+ *
  * @param {PaymentType} resourceObj - The payment object.
  * @param {string} service - The name of the service.
  * @param {boolean} isSaveToken - Flag indicating whether to save the token.
@@ -327,7 +327,7 @@ const getConsumerAuthenticationInformation = async (resourceObj: PaymentType, se
 
 /**
  * Generates target origins based on the provided function name.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @returns {Promise<string[]>} - An array of target origins.
  */
@@ -343,7 +343,7 @@ const getTargetOrigins = async (): Promise<string[]> => {
 
 /**
  * Generates allowed payment methods from environment variables.
- * 
+ *
  * @returns {Promise<string[]>} - An array of allowed payment methods.
  */
 const getAllowedPaymentMethods = async (): Promise<string[]> => {
@@ -359,7 +359,7 @@ const getAllowedPaymentMethods = async (): Promise<string[]> => {
 
 /**
  * Generates allowed card networks based on the function name from environment variables.
- * 
+ *
  * @param {string} functionName - The name of the function.
  * @returns {Promise< Promise<string[] | undefined>>} - An array of allowed card networks.
  */
@@ -375,7 +375,7 @@ const getAllowedCardNetworks = async (functionName: string): Promise<string[] | 
 
 /**
  * Generates token information based on the payment and function name.
- * 
+ *
  * @param {PaymentType} payment - The payment object.
  * @param {string} functionName - The name of the function.
  * @returns {Promise<any>} - Token information.
@@ -407,7 +407,7 @@ const getTokenInformation = async (payment: PaymentType, functionName: string): 
 
 /**
  * Generates capture mandate based on the service.
- * 
+ *
  * @param {string} service - The service type.
  * @returns {Promise<any>} - Capture mandate information.
  */
@@ -444,7 +444,7 @@ const getCaptureMandate = async (service: string): Promise<any> => {
 };
 /**
  * Generates bill-to information for updating a token.
- * 
+ *
  * @param {AddressType | null} addressData - The address data.
  * @returns {Promise<any>} - Bill-to information.
  */
@@ -459,7 +459,7 @@ const getUpdateTokenBillTo = async (addressData: AddressType | null): Promise<an
 
 /**
  * Generates risk information for a payment.
- * 
+ *
  * @param {PaymentType} payment - The payment object.
  * @returns {Promise<any>} - Risk information.
  */
@@ -491,7 +491,7 @@ const getRiskInformation = async (payment: PaymentType) => {
 
 /**
  * Generates buyer information based on the provided card tokens.
- * 
+ *
  * @param {object} paymentObj - The payment object.
  * @returns {Promise<any>} - The buyer information object.
  */
@@ -506,7 +506,7 @@ const getBuyerInformation = async (paymentObj: PaymentType): Promise<any> => {
 
 /**
  * Generates promotion information based on the provided cart object.
- * 
+ *
  * @param {any} cartObject - The card tokens.
  * @returns {Promise<any>} - The buyer information object.
  */
