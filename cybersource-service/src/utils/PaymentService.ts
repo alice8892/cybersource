@@ -649,8 +649,61 @@ const getCardTokens = async (customerInfo: Partial<CustomerType> | null, isvSave
   }
   return cardTokens;
 };
+
 /**
- * Retrieves the customer's address ID.
+ * Extracts card details from transient token JWT and updates payment object custom fields.
+ * This ensures card details are available for token creation.
+ * Uses the existing extractCardDetailsFromJwt function from PaymentHandler.
+ * 
+ * @param {PaymentType} updatePaymentObj - The payment object to update.
+ * @param {any} paymentResponse - The payment response containing the transient token.
+ * @returns {void}
+ */
+const extractAndSetCardDetailsFromJwt = (updatePaymentObj: PaymentType, paymentResponse: any): void => {
+  try {
+    // Check if transientTokenJwt exists in the payment response
+    const transientTokenJwt = paymentResponse?.requestData?.tokenInformation?.transientTokenJwt;
+    
+    if (transientTokenJwt && updatePaymentObj?.custom?.fields) {
+      const paymentId = updatePaymentObj?.id || '';
+      
+      paymentUtils.logData(__filename, 'extractAndSetCardDetailsFromJwt', Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Extracting card details from transient token JWT');
+      
+      // Reuse the existing extractCardDetailsFromJwt function from PaymentHandler
+      const cardDetails = paymentHandler.extractCardDetailsFromJwt(transientTokenJwt, paymentId, 'PaymentId');
+      
+      if (cardDetails) {
+        // Set the extracted card details into updatePaymentObj.custom.fields
+        if (cardDetails.suffix && !updatePaymentObj.custom.fields.isv_maskedPan) {
+          updatePaymentObj.custom.fields.isv_maskedPan = cardDetails.suffix;
+        }
+        
+        if (cardDetails.expirationMonth && !updatePaymentObj.custom.fields.isv_cardExpiryMonth) {
+          updatePaymentObj.custom.fields.isv_cardExpiryMonth = cardDetails.expirationMonth;
+        }
+        
+        if (cardDetails.expirationYear && !updatePaymentObj.custom.fields.isv_cardExpiryYear) {
+          updatePaymentObj.custom.fields.isv_cardExpiryYear = cardDetails.expirationYear;
+        }
+        
+        if (cardDetails.type && !updatePaymentObj.custom.fields.isv_cardType) {
+          updatePaymentObj.custom.fields.isv_cardType = cardDetails.type;
+        }
+        
+        paymentUtils.logData(__filename, 'extractAndSetCardDetailsFromJwt', Constants.LOG_INFO, 'PaymentId : ' + paymentId, 
+          'Successfully set card details - Type: ' + cardDetails.type + ', Last4: ' + cardDetails.suffix + ', Expiry: ' + cardDetails.expirationMonth + '/' + cardDetails.expirationYear);
+      } else {
+        paymentUtils.logData(__filename, 'extractAndSetCardDetailsFromJwt', Constants.LOG_WARN, 'PaymentId : ' + paymentId, 'No card details extracted from JWT');
+      }
+    }
+  } catch (exception) {
+    const paymentId = updatePaymentObj?.id || '';
+    paymentUtils.logExceptionData(__filename, 'extractAndSetCardDetailsFromJwt', 'Exception extracting card details from JWT', exception, paymentId, 'PaymentId : ', '');
+  }
+};
+
+/**
+ * Sets customer token data and handles token creation.
  * 
  * @param {any} cartObj - Cart object.
  * @returns {Promise<ActionResponseType>} - Address ID.
@@ -677,9 +730,11 @@ const setCustomerTokenData = async (cardTokens: CustomTokenType, paymentResponse
   const processTokenData = paymentValidator.shouldProcessTokens(isError, paymentResponse, updatePaymentObj);
   if (processTokenData && paymentResponse?.data?.tokenInformation?.paymentInstrument?.id) {
     const tokenInfo = paymentResponse.data.tokenInformation;
-    logger.info('TokenInfo : ' + JSON.stringify(tokenInfo));
-    const isv_savedToken = paymentResponse.data.tokenInformation.paymentInstrument.id;
-    authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_savedToken }));
+    
+    // Extract card details from transientTokenJwt and set them in updatePaymentObj.custom.fields
+    // This ensures the card details are available when creating the token
+    extractAndSetCardDetailsFromJwt(updatePaymentObj, paymentResponse);
+
     if (cardTokens && !cardTokens?.customerTokenId && tokenInfo?.customer && tokenInfo.customer?.id) {
       customerTokenId = tokenInfo.customer.id;
     } else if (cardTokens?.customerTokenId) {
@@ -687,7 +742,38 @@ const setCustomerTokenData = async (cardTokens: CustomTokenType, paymentResponse
     }
     const paymentInstrumentId = tokenInfo.paymentInstrument.id;
     const instrumentIdentifier = tokenInfo.instrumentIdentifier.id;
-    customerTokenResponse = await processTokens(customerTokenId, paymentInstrumentId, instrumentIdentifier, updatePaymentObj, addressId);
+    
+    // Process tokens and get the result which includes existing payment instrument ID if card already exists
+    const processTokensResult = await processTokens(customerTokenId, paymentInstrumentId, instrumentIdentifier, updatePaymentObj, addressId);
+    customerTokenResponse = processTokensResult.response;
+    
+    // Use existing token if card was found, otherwise use the new token from payment response
+    const tokenToSave = processTokensResult.existingPaymentInstrumentId || paymentInstrumentId;
+    
+    // Log if we're using an existing token instead of creating a new one
+    if (processTokensResult.existingPaymentInstrumentId) {
+      paymentUtils.logData(__filename, FunctionConstant.FUNC_SET_CUSTOMER_TOKEN_DATA, Constants.LOG_INFO, 'CustomerId : ' + customerId || '', 
+        'Card already exists, using existing token: ' + processTokensResult.existingPaymentInstrumentId + ' instead of new token: ' + paymentInstrumentId);
+    }
+    
+    const isv_savedToken = tokenToSave;
+    authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_savedToken }));
+    
+    // Add card details to authResponse actions if they were extracted from JWT
+    const customFields = updatePaymentObj?.custom?.fields;
+    if (customFields?.isv_maskedPan) {
+      authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_maskedPan: customFields.isv_maskedPan }));
+    }
+    if (customFields?.isv_cardExpiryMonth) {
+      authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_cardExpiryMonth: customFields.isv_cardExpiryMonth }));
+    }
+    if (customFields?.isv_cardExpiryYear) {
+      authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_cardExpiryYear: customFields.isv_cardExpiryYear }));
+    }
+    if (customFields?.isv_cardType) {
+      authResponse.actions.push(...paymentUtils.setCustomFieldMapper({ isv_cardType: customFields.isv_cardType }));
+    }
+    
     let logMessage = customerTokenResponse ? CustomMessages.SUCCESS_MSG_CARD_TOKENS_UPDATE : CustomMessages.ERROR_MSG_TOKEN_UPDATE
     paymentUtils.logData(__filename, FunctionConstant.FUNC_SET_CUSTOMER_TOKEN_DATA, Constants.LOG_INFO, 'CustomerId : ' + customerId || '', logMessage);
   } else {
@@ -708,14 +794,15 @@ const setCustomerTokenData = async (cardTokens: CustomTokenType, paymentResponse
  * @param {string} instrumentIdentifier - Instrument identifier.
  * @param {PaymentType} updatePaymentObj - Updated payment object.
  * @param {string} addressId - Address ID.
- * @returns {Promise<CustomerType | null>} - Indicates if the token already exists.
+ * @returns {Promise<{ response: CustomerType | null, existingPaymentInstrumentId: string | null }>} - Response and existing payment instrument ID if card already exists.
  */
-const processTokens = async (customerTokenId: string, paymentInstrumentId: string, instrumentIdentifier: string, updatePaymentObj: PaymentType, addressId: string): Promise<Partial<CustomerType> | null> => {
+const processTokens = async (customerTokenId: string, paymentInstrumentId: string, instrumentIdentifier: string, updatePaymentObj: PaymentType, addressId: string): Promise<{ response: Partial<CustomerType> | null, existingPaymentInstrumentId: string | null }> => {
   let existingTokens: string[];
   let parsedTokens: Partial<CustomerTokensType>;
   let updateTokenResponse: Partial<CustomerType> | null = null;
   let finalTokenIndex = -1;
   let isExistingCardFlag = false;
+  let existingPaymentInstrumentId: string | null = null;
   const customerId = updatePaymentObj?.customer?.id;
   const customFields = updatePaymentObj?.custom?.fields;
   if (customerId) {
@@ -728,11 +815,14 @@ const processTokens = async (customerTokenId: string, paymentInstrumentId: strin
           const newToken = JSON.parse(token);
           if (newToken.cardNumber === updatePaymentObj?.custom?.fields.isv_maskedPan && newToken.value === customerTokenId && newToken.instrumentIdentifier === instrumentIdentifier) {
             finalTokenIndex = tokenIndex;
+            // Store the existing paymentToken (paymentInstrumentId) to use instead of creating a new one
+            existingPaymentInstrumentId = newToken.paymentToken;
           }
         });
         if (-1 < finalTokenIndex && customFields?.isv_tokenAlias && customFields?.isv_cardExpiryMonth && customFields?.isv_cardExpiryYear) {
           isExistingCardFlag = true;
-          parsedTokens = paymentUtils.updateParsedToken(existingTokens[finalTokenIndex], customFields, paymentInstrumentId, customerTokenId, addressId);
+          // Use the existing paymentToken instead of the new paymentInstrumentId to prevent overriding the token
+          parsedTokens = paymentUtils.updateParsedToken(existingTokens[finalTokenIndex], customFields, existingPaymentInstrumentId!, customerTokenId, addressId);
           if (0 < Object.keys(parsedTokens).length) {
             existingTokens[finalTokenIndex] = JSON.stringify(parsedTokens);
             if (customTypePresent) {
@@ -748,7 +838,7 @@ const processTokens = async (customerTokenId: string, paymentInstrumentId: strin
   if (!isExistingCardFlag) {
     updateTokenResponse = await commercetoolsApi.setCustomerTokens(customerTokenId, paymentInstrumentId, instrumentIdentifier, updatePaymentObj, addressId);
   }
-  return updateTokenResponse;
+  return { response: updateTokenResponse, existingPaymentInstrumentId };
 };
 /**
  * Checks the presence of different types of applications in a given array of applications.

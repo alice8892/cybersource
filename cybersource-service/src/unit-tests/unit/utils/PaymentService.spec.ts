@@ -375,9 +375,9 @@ test.serial('process tokens ', async (t) => {
     PaymentAuthorizationServiceConstCC.payment,
     '',
   );
-  if (result) {
+  if (result.response) {
     let i = 0;
-    if ('email' in result && 'firstName' in result && 'lastName' in result && 'custom' in result) {
+    if ('email' in result.response && 'firstName' in result.response && 'lastName' in result.response && 'custom' in result.response) {
       i++;
     }
     if (1 === i) t.is(i, 1);
@@ -389,7 +389,8 @@ test.serial('process tokens ', async (t) => {
 
 test.serial('process tokens when token and instrument id is empty', async (t) => {
   let result = await paymentService.processTokens('', '', PaymentServiceConst.processTokensInstrumentIdentifier, PaymentAuthorizationServiceConstCC.payment, '');
-  t.is(result, null);
+  t.is(result.response, null);
+  t.is(result.existingPaymentInstrumentId, null);
 });
 
 test.serial('get cart details using payment id ', async (t) => {
@@ -415,9 +416,9 @@ test.serial('get cart details using payment id as null', async (t) => {
 
 test.serial('process tokens with empty instrument identifier', async (t) => {
   let result = await paymentService.processTokens(PaymentServiceConst.processTokensCustomerCardTokensObject.customerTokenId, PaymentServiceConst.processTokensCustomerCardTokensObject.paymentInstrumentId, '', PaymentAuthorizationServiceConstCC.payment, '');
-  if (result) {
+  if (result.response) {
     let i = 0;
-    if ('email' in result && 'firstName' in result && 'lastName' in result && 'custom' in result) {
+    if ('email' in result.response && 'firstName' in result.response && 'lastName' in result.response && 'custom' in result.response) {
       i++;
     }
     t.is(i, 1);
