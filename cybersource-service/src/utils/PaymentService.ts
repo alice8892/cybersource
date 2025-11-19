@@ -33,7 +33,6 @@ import paymentHandler from './PaymentHandler';
 import paymentUtils from './PaymentUtils';
 import paymentValidator from './PaymentValidator';
 import tokenHelper from './helpers/TokenHelper';
-import { logger } from './logger.utils';
 /**
  * Process the response for Order Management service based on payment response and transaction details.
  * 
