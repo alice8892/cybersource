@@ -76,10 +76,14 @@ const paymentCreateApi = async (paymentObj: PaymentType): Promise<ActionResponse
  */
 const paymentUpdateApi = async (paymentObj: PaymentType): Promise<ActionResponseType> => {
   let updateResponse: ActionResponseType = paymentUtils.getEmptyResponse();
+  const hasSuccessfulAuth = paymentObj?.transactions?.some(
+    (t) => t.type === Constants.CT_TRANSACTION_TYPE_AUTHORIZATION && t.state === Constants.CT_TRANSACTION_STATE_SUCCESS
+  );
   if (
-    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === "" || 
+    !hasSuccessfulAuth &&
+    (paymentObj.custom?.fields.isv_tokenCaptureContextSignature === "" || 
     paymentObj.custom?.fields.isv_tokenCaptureContextSignature === null ||
-    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === undefined
+    paymentObj.custom?.fields.isv_tokenCaptureContextSignature === undefined)
   ) {
     logger.info('Flex keys received with paymentObj: ' + paymentObj);
     const microFormKeys = await flexKeys.getFlexKeys(paymentObj);
@@ -113,6 +117,7 @@ const paymentUpdateApi = async (paymentObj: PaymentType): Promise<ActionResponse
         }
       } catch (exception) {
         paymentUtils.logExceptionData(__filename, 'FuncPaymentUpdateApi', CustomMessages.EXCEPTION_UPDATE_PAYMENT_API, exception, '', '', '');
+        updateResponse = paymentUtils.invalidInputResponse();
       }
     }
   } else {

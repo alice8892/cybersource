@@ -190,13 +190,27 @@ const getOrderInformationAmountDetails = (functionName: string, captureAmount: n
     orderInformationAmountDetails.currency = paymentObj?.amountPlanned?.currencyCode;
   } else if (FunctionConstant.FUNC_GET_AUTHORIZATION_RESPONSE === functionName) {
     orderInformationAmountDetails = {} as Ptsv2paymentsOrderInformationAmountDetails;
-    orderInformationAmountDetails.totalAmount = paymentUtils.convertCentToAmount(cartObj.totalPrice.centAmount, cartObj.totalPrice.fractionDigits);
-    orderInformationAmountDetails.currency = cartObj?.totalPrice?.currencyCode;
+    const grossAmount = cartObj?.taxedPrice?.totalGross?.centAmount;
+    const grossFractionDigits = cartObj?.taxedPrice?.totalGross?.fractionDigits;
+    if (grossAmount != null && grossFractionDigits != null) {
+      orderInformationAmountDetails.totalAmount = paymentUtils.convertCentToAmount(grossAmount, grossFractionDigits);
+      orderInformationAmountDetails.currency = cartObj.taxedPrice.totalGross.currencyCode;
+    } else {
+      orderInformationAmountDetails.totalAmount = paymentUtils.convertCentToAmount(cartObj.totalPrice.centAmount, cartObj.totalPrice.fractionDigits);
+      orderInformationAmountDetails.currency = cartObj?.totalPrice?.currencyCode;
+    }
   } else if (FunctionConstant.FUNC_GENERATE_CAPTURE_CONTEXT === functionName) {
     orderInformationAmountDetails = {} as Upv1capturecontextsOrderInformationAmountDetails;
     if ('Payments' === service) {
-      orderInformationAmountDetails.totalAmount = `${paymentUtils.convertCentToAmount(cartObj.totalPrice.centAmount, cartObj.totalPrice.fractionDigits)}`;
-      orderInformationAmountDetails.currency = cartObj?.totalPrice?.currencyCode;
+      const grossAmount = cartObj?.taxedPrice?.totalGross?.centAmount;
+      const grossFractionDigits = cartObj?.taxedPrice?.totalGross?.fractionDigits;
+      if (grossAmount != null && grossFractionDigits != null) {
+        orderInformationAmountDetails.totalAmount = `${paymentUtils.convertCentToAmount(grossAmount, grossFractionDigits)}`;
+        orderInformationAmountDetails.currency = cartObj.taxedPrice.totalGross.currencyCode;
+      } else {
+        orderInformationAmountDetails.totalAmount = `${paymentUtils.convertCentToAmount(cartObj.totalPrice.centAmount, cartObj.totalPrice.fractionDigits)}`;
+        orderInformationAmountDetails.currency = cartObj?.totalPrice?.currencyCode;
+      }
     } else if ('MyAccounts' === service) {
       orderInformationAmountDetails.currency = currencyCode;
       orderInformationAmountDetails.totalAmount = '0.01';
