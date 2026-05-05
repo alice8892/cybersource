@@ -539,9 +539,9 @@ const getRefundResponse = async (updatePaymentObj: PaymentType, updateTransactio
   let amountToBeRefunded = 0;
   let setAction: Partial<ActionType> | null;
   let iterateRefund = 0;
-  let availableCaptureAmount = 0;
   let chargeAmount = 0;
   let pendingAmount = 0;
+  let withEqualAmount = false;
   let paymentId = updatePaymentObj?.id || '';
   try {
     const validTransaction = paymentValidator.isValidTransaction(updatePaymentObj, updateTransactions);
@@ -549,60 +549,97 @@ const getRefundResponse = async (updatePaymentObj: PaymentType, updateTransactio
       refundAmount = updateTransactions?.amount?.centAmount as number;
       iterateRefundAmount = refundAmount;
       if (refundAmount) {
+        // Total refund cap validation: ensure new refund doesn't exceed remaining refundable amount
+        let totalCaptured = 0;
+        let totalRefunded = 0;
+        for (let transaction of updatePaymentObj.transactions) {
+          if (Constants.CT_TRANSACTION_TYPE_CHARGE === transaction.type && Constants.CT_TRANSACTION_STATE_SUCCESS === transaction.state && transaction?.amount?.centAmount) {
+            totalCaptured += transaction.amount.centAmount;
+          }
+          if (Constants.CT_TRANSACTION_TYPE_REFUND === transaction.type && Constants.CT_TRANSACTION_STATE_SUCCESS === transaction.state && transaction?.amount?.centAmount) {
+            totalRefunded += transaction.amount.centAmount;
+          }
+        }
+        if (refundAmount > totalCaptured - totalRefunded) {
+          paymentUtils.logData(__filename, FunctionConstant.FUNC_GET_REFUND_RESPONSE, Constants.LOG_ERROR, 'PaymentId : ' + paymentId, 'Refund amount exceeds available refundable amount');
+          return refundActions;
+        }
+        // First loop: find exact match by amount
         for (let transaction of updatePaymentObj.transactions) {
           if (Constants.CT_TRANSACTION_TYPE_CHARGE === transaction.type && Constants.CT_TRANSACTION_STATE_SUCCESS === transaction.state && transaction?.amount && transaction?.interactionId && transaction?.id) {
             if (refundAmount === transaction.amount.centAmount && !(Constants.STRING_CUSTOM in transaction)) {
               pendingAmount = transaction.amount.centAmount - refundAmount;
+              withEqualAmount = true;
+              refundResponseObject = paymentUtils.getRefundResponseObject(transaction, pendingAmount);
               break;
             } else if (transaction?.custom?.fields?.isv_availableCaptureAmount && refundAmount === transaction.custom.fields.isv_availableCaptureAmount) {
               pendingAmount = transaction.custom.fields.isv_availableCaptureAmount - refundAmount;
+              withEqualAmount = true;
+              refundResponseObject = paymentUtils.getRefundResponseObject(transaction, pendingAmount);
               break;
             }
-            refundResponseObject = paymentUtils.getRefundResponseObject(transaction, pendingAmount);
           }
         }
-        if (!refundResponseObject.captureId) {
+        if (!withEqualAmount) {
+          // Second loop: split refund across multiple charge transactions
           for (let transaction of updatePaymentObj.transactions) {
             refundResponseObject.captureId = '';
             const successfulChargeTransaction = paymentValidator.isSuccessFulChargeTransaction(transaction);
             if (successfulChargeTransaction) {
-              availableCaptureAmount = transaction?.custom?.fields?.isv_availableCaptureAmount || 0;
-              chargeAmount = availableCaptureAmount || transaction?.amount?.centAmount || 0;
-              amountToBeRefunded = Math.min(iterateRefundAmount, chargeAmount);
-              updateTransactions.amount.centAmount = amountToBeRefunded;
-              refundResponseObject = paymentUtils.getRefundResponseObject(transaction, amountToBeRefunded);
-              pendingTransactionAmount = chargeAmount - amountToBeRefunded;
-              iterateRefundAmount -= amountToBeRefunded;
-              iterateRefund++;
-              const orderResponse = await paymentRefund.getRefundData(updatePaymentObj, refundResponseObject.captureId, updateTransactions, orderNo);
-              if (orderResponse && orderResponse.httpCode) {
-                if (1 === iterateRefund && 0 === iterateRefundAmount) {
-                  refundActions = getOMServiceResponse(orderResponse, updateTransactions, refundResponseObject.transactionId, pendingTransactionAmount);
-                } else {
-                  if (Constants.API_STATUS_PENDING === orderResponse.status) {
-                    transactionState = Constants.CT_TRANSACTION_STATE_SUCCESS;
-                    setAction = setTransactionCustomType(refundResponseObject.transactionId, pendingTransactionAmount);
-                  } else {
-                    setAction = paymentUtils.failureResponse(orderResponse, updateTransactions);
-                  }
-                  if (setAction) {
-                    refundActions.actions.push(setAction);
-                  }
-                  const amount = {
-                    type: updateTransactions.amount?.type,
-                    currencyCode: updateTransactions.amount?.currencyCode,
-                    fractionDigits: updateTransactions.amount?.fractionDigits,
-                    centAmount: amountToBeRefunded,
-                  } as AmountPlannedType
-                  refundAction = paymentActions.addRefundAction(amount, orderResponse, transactionState);
-                  if (refundAction) {
-                    refundActions.actions.push(refundAction);
+              chargeAmount = transaction?.amount?.centAmount || 0;
+              if (0 !== iterateRefundAmount) {
+                if (transaction?.custom && 0 !== transaction?.custom?.fields?.isv_availableCaptureAmount) {
+                  chargeAmount = transaction.custom.fields.isv_availableCaptureAmount;
+                } else if (transaction?.custom && 0 === transaction?.custom?.fields?.isv_availableCaptureAmount) {
+                  // This charge is fully refunded, skip it
+                  continue;
+                }
+                if (iterateRefundAmount <= chargeAmount && 0 !== transaction?.custom?.fields?.isv_availableCaptureAmount) {
+                  updateTransactions.amount.centAmount = iterateRefundAmount;
+                  refundResponseObject = paymentUtils.getRefundResponseObject(transaction, iterateRefundAmount);
+                  pendingTransactionAmount = chargeAmount - iterateRefundAmount;
+                  amountToBeRefunded = iterateRefundAmount;
+                  iterateRefundAmount = 0;
+                  iterateRefund++;
+                } else if (iterateRefundAmount > chargeAmount && 0 !== transaction?.custom?.fields?.isv_availableCaptureAmount) {
+                  updateTransactions.amount.centAmount = chargeAmount;
+                  refundResponseObject = paymentUtils.getRefundResponseObject(transaction, chargeAmount);
+                  amountToBeRefunded = chargeAmount;
+                  iterateRefundAmount -= chargeAmount;
+                  iterateRefund++;
+                }
+                if (refundResponseObject?.captureId) {
+                  const orderResponse = await paymentRefund.getRefundData(updatePaymentObj, refundResponseObject.captureId, updateTransactions, orderNo);
+                  if (orderResponse && orderResponse.httpCode) {
+                    if (1 === iterateRefund && 0 === iterateRefundAmount) {
+                      refundActions = getOMServiceResponse(orderResponse, updateTransactions, refundResponseObject.transactionId, pendingTransactionAmount);
+                    } else {
+                      if (Constants.API_STATUS_PENDING === orderResponse.status) {
+                        transactionState = Constants.CT_TRANSACTION_STATE_SUCCESS;
+                        setAction = setTransactionCustomType(refundResponseObject.transactionId, pendingTransactionAmount);
+                      } else {
+                        setAction = paymentUtils.failureResponse(orderResponse, updateTransactions);
+                      }
+                      if (setAction) {
+                        refundActions.actions.push(setAction);
+                      }
+                      const amount = {
+                        type: updateTransactions.amount?.type,
+                        currencyCode: updateTransactions.amount?.currencyCode,
+                        fractionDigits: updateTransactions.amount?.fractionDigits,
+                        centAmount: amountToBeRefunded,
+                      } as AmountPlannedType
+                      refundAction = paymentActions.addRefundAction(amount, orderResponse, transactionState);
+                      if (refundAction) {
+                        refundActions.actions.push(refundAction);
+                      }
+                    }
                   }
                 }
               }
             }
           }
-        } else if (refundResponseObject?.captureId) {
+        } else if (withEqualAmount && refundResponseObject?.captureId) {
           const orderResponse = await paymentRefund.getRefundData(updatePaymentObj, refundResponseObject.captureId, updateTransactions, orderNo);
           if (orderResponse && orderResponse.httpCode) {
             refundActions = getOMServiceResponse(orderResponse, updateTransactions, refundResponseObject.transactionId, pendingTransactionAmount);

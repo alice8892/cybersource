@@ -59,6 +59,7 @@ const getCaptureResponse = async (payment: PaymentType, updateTransactions: Part
           });
         } else {
           paymentUtils.logData(__filename, FunctionConstant.FUNC_GET_CAPTURE_RESPONSE, Constants.LOG_INFO, 'PaymentId : ' + payment.id, CustomMessages.ERROR_MSG_SERVICE_PROCESS);
+          reject(paymentResponse);
         }
       }).catch((error) => {
         return error;
