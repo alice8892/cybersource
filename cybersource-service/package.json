@@ -74,7 +74,7 @@
     ]
   },
   "dependencies": {
-    "@commercetools-backend/loggers": "^22.35.0",
+    "@commercetools-backend/loggers": "^27.5.0",
     "@commercetools/api-request-builder": "^6.0.0",
     "@commercetools/sdk-auth": "^4.0.1",
     "@commercetools/sdk-client": "^3.0.0",
@@ -83,7 +83,7 @@
     "chunk": "^0.0.3",
     "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
-    "cybersource-rest-client": "0.0.69",
+    "cybersource-rest-client": "^0.0.77",
     "dir-archiver": "^2.1.0",
     "dompurify": "^3.0.10",
     "dotenv": "^16.4.0",
@@ -97,7 +97,7 @@
     "nyc": "^15.1.0",
     "rimraf": "^5.0.8",
     "run-func": "^3.0.0",
-    "serverless": "^3.40.0",
+    "serverless": "^4.35.0",
     "serverless-http": "^3.2.0",
     "serverless-ignore": "^0.2.1"
   },
@@ -118,7 +118,7 @@
     "nodemon": "^3.1.10",
     "npm-run-all": "^4.1.5",
     "nyc": "^15.1.0",
-    "open-cli": "^7.2.0",
+    "open-cli": "^9.0.0",
     "prettier": "^3.3.0",
     "typescript": "^4.0.2"
   }
