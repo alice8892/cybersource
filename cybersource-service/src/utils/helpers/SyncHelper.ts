@@ -357,10 +357,10 @@ const processRunSyncUpdateCaptureAmount = async (transaction: Partial<PaymentTra
     }: any = transaction;
     if (transaction && transaction?.id && Constants.CT_TRANSACTION_TYPE_CHARGE === transaction.type && Constants.CT_TRANSACTION_STATE_SUCCESS === transaction.state && 0 < refundAmount) {
         transactionId = transaction.id;
-        if (isv_availableCaptureAmount && refundAmount <= isv_availableCaptureAmount && transactionId) {
+        if (isv_availableCaptureAmount != null && 0 !== isv_availableCaptureAmount && refundAmount <= isv_availableCaptureAmount && transactionId) {
             refundAmountUsed = refundAmount;
             pendingTransactionAmount = isv_availableCaptureAmount - refundAmountUsed;
-        } else if (isv_availableCaptureAmount && refundAmount >= isv_availableCaptureAmount && transactionId) {
+        } else if (isv_availableCaptureAmount != null && 0 !== isv_availableCaptureAmount && refundAmount >= isv_availableCaptureAmount && transactionId) {
             refundAmountUsed = Number(isv_availableCaptureAmount);
             pendingTransactionAmount = isv_availableCaptureAmount - refundAmountUsed;
         } else if (centAmount && refundAmount <= centAmount && !custom && transactionId) {
