@@ -95,6 +95,7 @@ declare module "cybersource-rest-client" {
       contentTypes: Array<string>,
       accepts: Array<string>,
       returnType: string | Array<string> | Record<string, unknown>,
+      isResponseMLEForApi: boolean | null,
       callback: any,
     ): Record<string, unknown>;
 

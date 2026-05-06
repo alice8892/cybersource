@@ -56,7 +56,7 @@ const getPublicKeys = async (captureContext: string, paymentObj: PaymentType): P
         const digest = crypto.createHash('sha256').update(JSON.stringify(null), 'utf8').digest(Constants.ENCODING_BASE_SIXTY_FOUR);
         publicKeyHeaderParams['Digest'] = `SHA-256=${digest}`;
         return await new Promise((resolve, reject) => {
-          apiClient.callApi(publicKeyURL, 'GET', publicKeyPathParams, {}, publicKeyHeaderParams, null, null, [], ['application/json'], ['application/json'], Constants.STR_OBJECT, (error: any, data: any, response: any) => {
+          apiClient.callApi(publicKeyURL, 'GET', publicKeyPathParams, {}, publicKeyHeaderParams, null, null, [], ['application/json'], ['application/json'], Constants.STR_OBJECT, null, (error: any, data: any, response: any) => {
             paymentUtils.logData(__filename, FunctionConstant.FUNC_GET_PUBLIC_KEYS, Constants.LOG_INFO, 'PaymentId : ' + paymentId, 'Public Key Response =' + JSON.stringify(response));
             if (data) {
               let isSignatureValid;

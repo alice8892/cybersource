@@ -14,6 +14,7 @@ const getSubscriptionDetails = async (apiClient: any, configObject: any, request
     apiHeaders.contentTypes,
     apiHeaders.accepts,
     apiHeaders.returnType,
+    null,
     callback
   );
 };
