@@ -107,6 +107,14 @@ const paymentUpdateApi = async (paymentObj: PaymentType): Promise<ActionResponse
   } else if (paymentObj?.id && paymentObj.paymentMethodInfo?.method && paymentObj?.transactions) {
     const paymentMethod = paymentObj.paymentMethodInfo.method;
     const transactionLength = paymentObj.transactions?.length;
+    const now = paymentUtils.getDate(Date.now(), true) as string;
+    const timestampActions = paymentObj.transactions
+      .filter((t) => !t.timestamp && t.id)
+      .map((t) => ({
+        action: Constants.CHANGE_TRANSACTION_TIMESTAMP,
+        transactionId: t.id,
+        timestamp: now,
+      }));
     if (paymentObj?.custom?.fields) {
       try {
         if (Constants.CC_PAYER_AUTHENTICATION === paymentMethod && 0 === transactionLength) {
@@ -119,6 +127,9 @@ const paymentUpdateApi = async (paymentObj: PaymentType): Promise<ActionResponse
         paymentUtils.logExceptionData(__filename, 'FuncPaymentUpdateApi', CustomMessages.EXCEPTION_UPDATE_PAYMENT_API, exception, '', '', '');
         updateResponse = paymentUtils.invalidInputResponse();
       }
+    }
+    if (timestampActions.length) {
+      updateResponse.actions.push(...(timestampActions as any));
     }
   } else {
     paymentUtils.logData(__filename, 'FuncPaymentUpdateApi', Constants.LOG_INFO, '', CustomMessages.ERROR_MSG_EMPTY_PAYMENT_DATA);
@@ -279,7 +290,7 @@ const orderManagementApi = async (paymentId: string, transactionAmount: number |
           if (transactionAmount) {
             paymentObject.amountPlanned.centAmount = paymentUtils.convertAmountToCent(transactionAmount, fractionDigits);
           }
-          const transactionObject = paymentUtils.createTransactionObject(paymentObject.version, paymentObject.amountPlanned, transactionType, Constants.CT_TRANSACTION_STATE_INITIAL, undefined, undefined);
+          const transactionObject = paymentUtils.createTransactionObject(paymentObject.version, paymentObject.amountPlanned, transactionType, Constants.CT_TRANSACTION_STATE_INITIAL, undefined, paymentUtils.getDate(Date.now(), true) as string);
           const addTransaction = await commercetoolsApi.addTransaction(transactionObject, paymentId);
           if (addTransaction && addTransaction.transactions?.length) {
             const transactionLength = addTransaction.transactions.length;

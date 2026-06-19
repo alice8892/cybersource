@@ -180,6 +180,7 @@ export abstract class Constants {
   //CT custom fields
   static readonly ADD_INTERFACE_INTERACTION = 'addInterfaceInteraction';
   static readonly CHANGE_TRANSACTION_INTERACTION_ID = 'changeTransactionInteractionId';
+  static readonly CHANGE_TRANSACTION_TIMESTAMP = 'changeTransactionTimestamp';
   static readonly INVALID_INPUT = 'InvalidInput';
   static readonly ISV_ADDRESS_ID = 'isv_addressId';
   static readonly ISV_FAILED_TOKENS = 'isv_failedTokens';

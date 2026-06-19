@@ -177,7 +177,7 @@ const runSyncAddTransaction = async (syncUpdateObject: ReportSyncType, reasonCod
                 isAuthReversalTriggeredFlag = await isAuthReversalTriggered(paymentDetails, query);
             }
             if (!isAuthReversalTriggeredFlag) {
-                const authReversalObject = paymentUtils.createTransactionObject(updateSyncResponse?.version, syncUpdateObject.amountPlanned as AmountPlannedType, Constants.CT_TRANSACTION_TYPE_CANCEL_AUTHORIZATION, Constants.CT_TRANSACTION_STATE_INITIAL, undefined, undefined);
+                const authReversalObject = paymentUtils.createTransactionObject(updateSyncResponse?.version, syncUpdateObject.amountPlanned as AmountPlannedType, Constants.CT_TRANSACTION_TYPE_CANCEL_AUTHORIZATION, Constants.CT_TRANSACTION_STATE_INITIAL, undefined, paymentUtils.getDate(Date.now(), true) as string);
                 updateSyncResponse = await commercetoolsApi.addTransaction(authReversalObject, syncUpdateObject?.id);
             }
         } else if (((Constants.PAYMENT_GATEWAY_ERROR_REASON_CODE === reasonCode || Constants.PAYMENT_GATEWAY_FAILURE_REASON_CODE === reasonCode) && authPresent && !authReasonCodePresent) || (Constants.PAYMENT_GATEWAY_SUCCESS_REASON_CODE !== reasonCode && '475' !== reasonCode)) {
