@@ -2,7 +2,6 @@ import crypto from 'crypto';
 
 import restApi from 'cybersource-rest-client';
 import jwt from 'jsonwebtoken';
-import jwkToPem from 'jwk-to-pem';
 
 import { Constants } from '../../constants/constants';
 import { CustomMessages } from '../../constants/customMessages';
@@ -61,7 +60,7 @@ const getPublicKeys = async (captureContext: string, paymentObj: PaymentType): P
             if (data) {
               let isSignatureValid;
               try {
-                pemPublicKey = jwkToPem(data);
+                pemPublicKey = crypto.createPublicKey({ key: data, format: 'jwk' }).export({ type: 'spki', format: 'pem' }) as string;
                 isSignatureValid = jwt.verify(captureContext, pemPublicKey);
               } catch (exception) {
                 paymentUtils.logData(__filename, FunctionConstant.FUNC_GET_PUBLIC_KEYS, Constants.LOG_ERROR, 'PaymentId : ' + paymentId, CustomMessages.ERROR_MSG_PUBLIC_KEY_VERIFICATION + Constants.STRING_HYPHEN + exception);
